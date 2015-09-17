@@ -75,37 +75,28 @@ class Talk extends Controller
     /**
      * Displays the add and edit page and processes the submit.
      *
-     * @param mixed|null $id  Either the string 'event' or the id of the talk
-     * @param mixed|null $opt Id of the event if $id = 'event'
+     * @param mixed|null $stringEventOrTalkId  Either the string 'event' or the id of the talk
+     * @param mixed|null $optionalEventId Id of the event if $id = 'event'
      *
      * @return void
      */
-    function add($id = null, $opt = null)
+    function add($stringEventOrTalkId = null, $optionalEventId = null)
     {
         $tracks = array();
 
-        $this->load->model('talks_model');
-        $this->load->model('event_model');
-        $this->load->model('categories_model');
-        $this->load->model('lang_model');
-        $this->load->helper('form');
-        $this->load->library('validation');
-        $this->load->library('timezone');
-        $this->load->model('event_track_model', 'eventTracks');
-        $this->load->model('talk_track_model', 'talkTracks');
-        $this->load->model('talk_speaker_model', 'talkSpeakers');
+        $this->loadAddDependencies();
 
-        if (isset($id) && $id == 'event') {
-            $eid = $opt;
-            $id  = null;
+        if (isset($stringEventOrTalkId) && $stringEventOrTalkId == 'event') {
+            $eid = $optionalEventId;
+            $stringEventOrTalkId  = null;
 
-        } elseif ($id) {
-            $this->edit_id = $id;
+        } elseif ($stringEventOrTalkId) {
+            $this->edit_id = $stringEventOrTalkId;
 
-            $det = $this->talks_model->getTalks($id);
+            $det = $this->talks_model->getTalks($stringEventOrTalkId);
             $eid = $det[0]->eid;
 
-        } elseif (!$id && !$opt) {
+        } elseif (!$stringEventOrTalkId && !$optionalEventId) {
             //no options specified!
             redirect();
         }
@@ -134,13 +125,13 @@ class Talk extends Controller
         $this->validation->set_fields($fields);
 
         // if we have the event ID in our option...
-        if ($id == null && $opt != null) {
-            $tracks = $this->eventTracks->getEventTracks($opt);
+        if ($stringEventOrTalkId == null && $optionalEventId != null) {
+            $tracks = $this->eventTracks->getEventTracks($optionalEventId);
         }
 
-        if ($id) {
+        if ($stringEventOrTalkId) {
             $thisTalk = $det[0];
-            $det      = $this->talks_model->getTalks($id);
+            $det      = $this->talks_model->getTalks($stringEventOrTalkId);
 
             $events = $this->event_model->getEventDetail($thisTalk->event_id);
             $tracks = $this->eventTracks->getEventTracks($thisTalk->eid);
@@ -160,7 +151,7 @@ class Talk extends Controller
 
             // set our speaker information
             $this->validation->speaker
-                = $this->talkSpeakers->getSpeakerByTalkId($id);
+                = $this->talkSpeakers->getSpeakerByTalkId($stringEventOrTalkId);
 
             $this->validation->eid        = $thisTalk->eid;
             $this->validation->given_day  = $this->timezone
@@ -270,25 +261,25 @@ class Talk extends Controller
                 'lang'        => $this->input->post('session_lang')
             );
 
-            if ($id) {
+            if ($stringEventOrTalkId) {
                 // update the speaker information
                 $this->talkSpeakers->handleSpeakerData(
-                    $id, $this->input->post('speaker_row')
+                    $stringEventOrTalkId, $this->input->post('speaker_row')
                 );
 
-                $this->db->where('id', $id);
+                $this->db->where('id', $stringEventOrTalkId);
                 $this->db->update('talks', $arr);
 
                 // remove the current reference for the talk category and
                 // add a new one
                 $this->db->delete(
                     'talk_cat', array(
-                        'talk_id' => $id
+                        'talk_id' => $stringEventOrTalkId
                     )
                 );
 
                 $this->validation->speaker = $this->talkSpeakers
-                    ->getTalkSpeakers($id);
+                    ->getTalkSpeakers($stringEventOrTalkId);
 
                 // check to see if we have a track and it's not the "none"
                 if ($this->input->post('session_track') != 'none') {
@@ -296,7 +287,7 @@ class Talk extends Controller
                         ? $track_info[0]->ID : null;
                     $new_track  = $this->input->post('session_track');
                     $this->talkTracks->updateSessionTrack(
-                        $id, $curr_track, $new_track
+                        $stringEventOrTalkId, $curr_track, $new_track
                     );
                     $this->validation->session_track = $new_track;
                 } elseif ($this->input->post('session_track') == 'none') {
@@ -305,12 +296,12 @@ class Talk extends Controller
                         && is_object($thisTalksTrack)
                     ) {
                         $curr_track = $thisTalksTrack->ID;
-                        $this->talkTracks->deleteSessionTrack($id, $curr_track);
+                        $this->talkTracks->deleteSessionTrack($stringEventOrTalkId, $curr_track);
                     }
                 }
 
                 $msg   = 'Talk information successfully updated! ' .
-                    '<a href="/talk/view/' . $id . '">Return to talk</a>';
+                    '<a href="/talk/view/' . $stringEventOrTalkId . '">Return to talk</a>';
                 $pass  = true;
             } else {
                 //check to be sure its unique
@@ -1102,6 +1093,35 @@ class Talk extends Controller
             }
         }
         return true;
+    }
+
+    private function loadAddModels()
+    {
+        $this->load->model('talks_model');
+        $this->load->model('event_model');
+        $this->load->model('categories_model');
+        $this->load->model('lang_model');
+        $this->load->model('event_track_model', 'eventTracks');
+        $this->load->model('talk_track_model', 'talkTracks');
+        $this->load->model('talk_speaker_model', 'talkSpeakers');
+    }
+
+    private function loadAddHelpers()
+    {
+        $this->load->helper('form');
+    }
+
+    private function loadAddLibraries()
+    {
+        $this->load->library('validation');
+        $this->load->library('timezone');
+    }
+
+    private function loadAddDependencies()
+    {
+        $this->loadAddModels();
+        $this->loadAddHelpers();
+        $this->loadAddLibraries();
     }
 }
 
