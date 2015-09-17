@@ -57,12 +57,15 @@ class TalksContext extends RawMinkContext implements Context, SnippetAcceptingCo
      */
     public function iAddATalkNamed($talkName)
     {
-        $this->visitPath('/talk/add/event/' . $this->eventId);
+        $this->getSession()->visit('talk/add/event/'.$this->eventId);
 
-        $page= $this->getMink()->getSession()->getPage();
+        $page = $this->getSession()->getPage();
         $page->fillField('talk_title', $talkName);
-        $page->fillField('talk_desc', 'yada yada');
+        $page->fillField('speaker_row[new_1]', 'Marcello');
+        $page->fillField('talk_desc', 'What my talk is about');
         $page->pressButton('Add Session');
+
+        $this->lastAddedTalk = $talkName;
     }
 
     /**
@@ -70,9 +73,10 @@ class TalksContext extends RawMinkContext implements Context, SnippetAcceptingCo
      */
     public function thisTalkShouldBeListedOnTheEventPage($talkName)
     {
-        $this->visitPath('/event/view/' . $this->eventId);
+        $this->getSession()->getPage()->clickLink('View Event');
 
-        $this->assertSession()->pageTextContains($talkName);
+        $this->assertSession()->elementsCount('css', '#talks table tr', 2);
+        $this->assertSession()->elementTextContains('css', '#talks table tr.row1 td:nth-child(2) a', $talkName);
     }
 
     /**
@@ -80,7 +84,7 @@ class TalksContext extends RawMinkContext implements Context, SnippetAcceptingCo
      */
     public function iShouldBeInformedTheTalkSuccessfullyAdded()
     {
-        $this->assertSession()->pageTextContains("added");
+        $this->assertSession()->pageTextContains(' Talk information successfully added');
     }
 
     /**
@@ -88,7 +92,7 @@ class TalksContext extends RawMinkContext implements Context, SnippetAcceptingCo
      */
     public function iShouldBeInformedThatATalkWithTheSameNameAlreadyExists()
     {
-        throw new PendingException();
+        $this->assertSession()->pageTextContains('There was an error adding the talk information! (Duplicate talk)');
     }
 
     /**
@@ -96,7 +100,9 @@ class TalksContext extends RawMinkContext implements Context, SnippetAcceptingCo
      */
     public function thereShouldOnlyBeOneTalkListed()
     {
-        throw new PendingException();
+        $this->getSession()->getPage()->clickLink('View Event');
+
+        $this->assertSession()->elementsCount('css', '#talks table tr', 2);
     }
 
     /**
@@ -104,7 +110,7 @@ class TalksContext extends RawMinkContext implements Context, SnippetAcceptingCo
      */
     public function iShouldBeInformedThatTheTalkTitleIsMissing()
     {
-        throw new PendingException();
+        $this->assertSession()->pageTextContains('The Talk Title field is required');
     }
 
     /**
@@ -112,7 +118,9 @@ class TalksContext extends RawMinkContext implements Context, SnippetAcceptingCo
      */
     public function thereShouldBeNoTalksListedOnTheEventPage()
     {
-        throw new PendingException();
+        $this->getSession()->visit('event/view/'.$this->eventId);
+
+        $this->assertSession()->elementsCount('css', '#talks table', 0);
     }
 
     /**
@@ -120,7 +128,10 @@ class TalksContext extends RawMinkContext implements Context, SnippetAcceptingCo
      */
     public function theSecondTalkListedOnItsEventPageShouldBe($talkName)
     {
-        throw new PendingException();
+        $this->getSession()->getPage()->clickLink('View Event');
+
+        $this->assertSession()->elementsCount('css', '#talks tr', 3);
+        $this->assertSession()->elementTextContains('css', '#talks table tr.row2 td:nth-child(2) a', $talkName);
     }
 
     /**
@@ -128,7 +139,7 @@ class TalksContext extends RawMinkContext implements Context, SnippetAcceptingCo
      */
     public function thisEventHasATrackNamed($trackName)
     {
-        throw new PendingException();
+        mysqli_query($this->db, "INSERT INTO `event_track` VALUES ($this->eventId,\"$trackName\",\"$trackName\",NULL, '')");
     }
 
     /**
@@ -152,7 +163,16 @@ class TalksContext extends RawMinkContext implements Context, SnippetAcceptingCo
      */
     public function changeTheTitleOfMyTalkTo($newTitle)
     {
-        throw new PendingException();
+        $result = mysqli_query($this->db, "SELECT ID FROM `talks` WHERE talk_title=\"{$this->lastAddedTalk}\"");
+        $cols = mysqli_fetch_assoc($result);
+
+        $this->getSession()->visit('/talk/edit/'.$cols['ID']);
+
+        $page = $this->getSession()->getPage();
+        $page->fillField('talk_title', $newTitle);
+        $page->pressButton('Save Edits');
+
+        $this->lastAddedTalk = $newTitle;
     }
 
     /**
@@ -160,7 +180,7 @@ class TalksContext extends RawMinkContext implements Context, SnippetAcceptingCo
      */
     public function iShouldBeInformedThatTheTalkInformationWasSuccessfullyUpdated()
     {
-        throw new PendingException();
+        $this->assertSession()->pageTextContains('Talk information successfully updated');
     }
 
     /**
@@ -168,6 +188,6 @@ class TalksContext extends RawMinkContext implements Context, SnippetAcceptingCo
      */
     public function theNewTitleOfTheTalkShouldBe($newTitle)
     {
-        throw new PendingException();
+        $this->assertSession()->fieldValueEquals('talk_title', $newTitle);
     }
 }
