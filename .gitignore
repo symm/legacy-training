@@ -1,4 +1,5 @@
 *.DS_Store
 system/logs
+!system/logs/.gitkeep
 vendor
 bin
