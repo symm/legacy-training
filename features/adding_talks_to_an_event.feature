@@ -1,16 +1,17 @@
-@guard
 Feature: Adding talks to an event
 
   In order to allow event attendees to give feedback on a specific talk
   As a Event Host
   I needs speakers to be able to add their talk to the event
 
+  @guard
   Scenario: Successfully adding a new talk
     Given there is an event named "Reclaiming the Legacy"
     When I add a talk named "Using BDD on Legacy Code"
     Then I should be informed that the talk was successfully added
     And the talk "Using BDD on Legacy Code" should be listed for this event
 
+  @guard
   Scenario: Being able to edit my previously added talk title
     Given there is an event named "Reclaiming the Legacy"
     And I have already added a talk named "Using BDD on Legacy Code"
@@ -18,12 +19,14 @@ Feature: Adding talks to an event
     Then I should be informed that the talk information was successfully updated
     And the new title of the talk should be "Using Behat on Legacy Code"
 
+  @guard
   Scenario: Being informed that the talk title is missing
     Given there is an event named "Reclaiming the Legacy"
     When I add a talk named ""
     Then I should be informed that the talk title is missing
     And there should be no talks listed for this event
 
+  @guard
   Scenario: Being told a talk with the same title already exists
     Given there is an event named "Reclaiming the Legacy"
     And I have already added a talk named "Using BDD on Legacy Code"
@@ -31,6 +34,7 @@ Feature: Adding talks to an event
     Then I should be informed that a talk with the same name already exists
     And there should only be one talk listed for this event
 
+  @guard
   Scenario: Being able to add more than one talk
     Given there is an event named "Reclaiming the Legacy"
     And I have already added a talk named "Using BDD on Legacy Code"
