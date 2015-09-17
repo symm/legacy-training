@@ -4,6 +4,7 @@ Feature: Adding talks to an event
   As a Event Host
   I needs speakers to be able to add their talk to the event
 
+  @guard
   Scenario: Successfully adding a new talk
     Given there is an event named "Reclaiming the Legacy"
     When I add a talk named "Using BDD on Legacy Code"

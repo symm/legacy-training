@@ -57,7 +57,12 @@ class TalksContext extends RawMinkContext implements Context, SnippetAcceptingCo
      */
     public function iAddATalkNamed($talkName)
     {
-        throw new PendingException();
+        $this->visitPath('/talk/add/event/' . $this->eventId);
+
+        $page= $this->getMink()->getSession()->getPage();
+        $page->fillField('talk_title', $talkName);
+        $page->fillField('talk_desc', 'yada yada');
+        $page->pressButton('Add Session');
     }
 
     /**
@@ -65,7 +70,9 @@ class TalksContext extends RawMinkContext implements Context, SnippetAcceptingCo
      */
     public function thisTalkShouldBeListedOnTheEventPage($talkName)
     {
-        throw new PendingException();
+        $this->visitPath('/event/view/' . $this->eventId);
+
+        $this->assertSession()->pageTextContains($talkName);
     }
 
     /**
@@ -73,7 +80,7 @@ class TalksContext extends RawMinkContext implements Context, SnippetAcceptingCo
      */
     public function iShouldBeInformedTheTalkSuccessfullyAdded()
     {
-        throw new PendingException();
+        $this->assertSession()->pageTextContains("added");
     }
 
     /**
